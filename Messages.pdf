@@ -1,0 +1,67 @@
+/****************Created Schema *****************/
+
+CREATE SCHEMA Messages Msgs
+
+/**************************Created Country table with Country details,locations*******************/
+/*********** Countries like India,USA and Location like Delhi,Mumbai,Newyork and ****************/
+/******************* "ALL" need add in both Country and in Location table for selection***********/
+
+CREATE TABLE Msgs.Countrys
+      ( CountryID Int  PRIMARY KEY, CountryName Varchar2(10), LocationId Int,Location Varchar2(10),Status char(1) check (Status in ('Y','N'),CreatedDate Date) 
+ 
+/************************ Messages Table*****************/
+
+CREATE TABLE Msgs.Messages
+      ( MsgID Int  PRIMARY KEY, Title Varchar2(10), Message Varchar2(10),Status char(1) check (Status in ('Y','N'),CountryID, WebsiteID Varchar2(10),ischeck char(1) check (ischeck in('Y','N'),CreatedDate Date) 
+
+/************************ Visitors Table*****************/
+
+CREATE TABLE Msgs.Visitors
+      ( VisitorID Int  PRIMARY KEY, WebsiteID Varchar2(10), IPAddress Varchar2(10),LocationID Int,OS Varchar2(10), Device_Browser Varchar2(10), Messagescount Int, Favourites char(1) check (Favourites  in ('Y','N'))    
+
+/************************ Websites Table*****************/
+
+CREATE TABLE Msgs.Websites
+      ( WebsiteID Int  PRIMARY KEY, WebsiteName Varchar2(10), URL Varchar2(10), CreatedDate Date, ischeck char(1) check (ischeck in('Y','N'),CreatedDate Date) 
+ 
+/************************ Messages View*****************/
+
+ CREATE VIEW View_Messages
+      AS SELECT Msg.MsgID, Msg.Title,Msg.Message,Msg.Status,Web.WebsiteName,Msg.ischeck from Msgs.Messages msg inner join Msgs.Websites Web On Msg.Status='Y' and  Msg.WebsiteID = Web.WebsiteID 
+   GRANT select ON View_Messages TO mv; 
+
+/************************ Visitors View*****************/
+
+CREATE VIEW View_Visitors
+      AS SELECT Vist.VisitorID, Vist.WebsiteID,Vist.IPAddress,Vist.Location,Vist.OS,Vist.Device_Browser, Web.WebsiteName ,Vist.Favourites from Msgs.Visitors Vist inner join Msgs.WebSites Web On Status='Y' and Vist.WebsiteID =Web.WebsiteID Inner Join
+     from Msg.Countrys C on Vist.LocationId=C.LocationId
+   GRANT select ON View_Visitors TO mv; 
+
+/***********************Websites View*****************/
+
+CREATE VIEW View_Websites
+      AS SELECT WebsiteID , WebsiteName Varchar2(10), URL Varchar2(10), CreatedDate Date,ischeck  WHERE Status='Y'
+   GRANT select ON View_Websites TO mv; 
+
+
+/********************Delivered Messages***********/
+
+SELECT CountryName, CreatedDate Month, 
+(select count(*) from Msgs.Messages where ischeck= 'Y')  Clicked,
+(select count(*) from Msgs.Messages where ischeck= 'N')  Not Clicked,
+FROM Msgs.Messages where EXTRACT(YEAR FROM TO_DATE(CreatedDate , 'MON-YYYY')) =:MayYear and CountryName=:Countryselected
+GROUP BY CountryName
+
+/********************Delivered By Chrome*********/
+
+SELECT CountryName,CreatedDate Month,Device_Browser Browser,
+(select count(*) from Msgs.Messagescount where Device_Browser=:'Chrome')  Clicked,
+FROM Msgs.Messages where EXTRACT(YEAR FROM TO_DATE(CreatedDate , 'MON-YYYY')) =:MayYear and Device_Browser='Chrome' and and CountryId=:Countryselected
+GROUP BY Device_Browser,ContryName
+
+/*****************Messages delivered Over time*****/
+
+SELECT CountryName,CreatedDate as Month,
+(select count(*) from Msgs.Messagescount)  Clicked,
+FROM Msgs.Messages where trunc(CreatedDate) BETWEEN to_date('05-02-2019','MM-DD-YYYY') AND TO_DATE('05-30-2019','MM-DD-YYYY') and CountryId=:Countryselected
+GROUP BY CountryName
